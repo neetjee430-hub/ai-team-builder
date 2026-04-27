@@ -1,0 +1,6 @@
+{
+  "name": "HireGuru AI",
+  "description": "AI-powered HR and hiring co-pilot for small and medium Indian businesses.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": []
+}
