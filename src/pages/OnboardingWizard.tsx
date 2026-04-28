@@ -1,341 +1,283 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { CategorySelector } from '../components/CategorySelector';
-import { MapPin } from 'lucide-react';
-import { topCities, indianStates } from '../data/constants';
-import { SearchableSelect } from '../components/SearchableSelect';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db, auth } from '../lib/firebase';
+import { generateTeamBlueprint } from '../services/geminiOrchestrator';
 
-const steps = [
-  { id: 1, title: 'Business Details' },
-  { id: 2, title: 'Location & Size' },
-  { id: 3, title: 'Budget' },
-  { id: 4, title: 'Hiring Urgency' },
-  { id: 5, title: 'Preferences' }
-];
-
-const BudgetCards = [
-  { id: 1, range: '₹10k – ₹20k', desc: '👤 Solo / 1-2 Staff' },
-  { id: 2, range: '₹20k – ₹40k', desc: '👥 Small Team (2-3 Staff)' },
-  { id: 3, range: '₹40k – ₹60k', desc: '👨‍👩‍👧 Growing Team (3-5 Staff)' },
-  { id: 4, range: '₹60k – ₹80k', desc: '🏢 Established Team (5-7 Staff)' },
-  { id: 5, range: '₹80k – ₹1L', desc: '🏬 Medium Business (7-10 Staff)' },
-  { id: 6, range: '₹1L – ₹1.5L', desc: '🏭 Scaling Business' },
-  { id: 7, range: '₹1.5L – ₹2L', desc: '🏗️ Large Operation' },
-  { id: 8, range: '₹2L – ₹3L', desc: '🏛️ Big Business' },
-];
+interface ChatMessage {
+  id: string;
+  sender: 'aria' | 'user';
+  text: string;
+  options?: string[]; // Quick reply chips
+  inputType?: 'text' | 'number' | 'multi-select';
+}
 
 const OnboardingWizard = () => {
-  const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
-
-  // Step 1
-  const [categories, setCategories] = useState<string[]>([]);
-  const [businessDescription, setBusinessDescription] = useState('');
-
-  // Step 2
-  const [isDetectingLoc, setIsDetectingLoc] = useState(false);
-  const [locationDetected, setLocationDetected] = useState(false);
-  const [locData, setLocData] = useState({ area: '', city: '', state: '', pin: '' });
-  const [size, setSize] = useState({ length: '', width: '', height: '' });
-  const [staff, setStaff] = useState({ current: '', target: '' });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [step, setStep] = useState(0);
+  const chatEndRef = useRef<HTMLDivElement>(null);
   
-  // Step 3
-  const [budget, setBudget] = useState<number | null>(null);
+  // Collected Data
+  const [businessData, setBusinessData] = useState<any>({ roles: [] });
 
-  // Step 4
-  const [urgencyText, setUrgencyText] = useState('');
-
-  // Step 5
-  const [comms, setComms] = useState({ whatsapp: true, email: false });
-  const [whatsappNum, setWhatsappNum] = useState("9876543210");
-  const [emailAddress, setEmailAddress] = useState("");
-  const [commError, setCommError] = useState("");
-
-  const handleDetectLocation = () => {
-    setIsDetectingLoc(true);
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-            const data = await res.json();
-            const address = data.address;
-            
-            setIsDetectingLoc(false);
-            setLocationDetected(true);
-            
-            // Map OSN to fields
-            setLocData({ 
-              area: address.suburb || address.neighbourhood || address.road || '', 
-              city: address.city || address.town || address.county || '', 
-              state: address.state || '', 
-              pin: address.postcode || '' 
-            });
-          } catch (e) {
-             fallbackLocation();
-          }
-        },
-        () => { fallbackLocation(); }
+  // Add initial message
+  useEffect(() => {
+    if (messages.length === 0) {
+      addAriaMessage(
+        "Namaste! 🙏 Welcome to HireIQ! I'm Aria, your personal AI hiring assistant. I'm excited to help you build your dream team! This will only take about 4 minutes. Ready to get started?",
+        ["Yes, let's build my team! 🚀", "Tell me more first"]
       );
-    } else {
-       fallbackLocation();
     }
-  };
+  }, []);
 
-  const fallbackLocation = () => {
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
+
+  const addAriaMessage = (text: string, options?: string[], inputType?: 'text' | 'number' | 'multi-select') => {
+    setIsTyping(true);
     setTimeout(() => {
-      setIsDetectingLoc(false);
-      setLocationDetected(true);
-      setLocData({ area: 'Vijay Nagar', city: 'Indore', state: 'Madhya Pradesh', pin: '452010' });
-    }, 1000);
+      setMessages(prev => [...prev, { id: Date.now().toString(), sender: 'aria', text, options, inputType }]);
+      setIsTyping(false);
+    }, 1200);
   };
 
-  const calculateArea = () => {
-    if (size.length && size.width) {
-      return parseInt(size.length) * parseInt(size.width);
-    }
-    return 0;
+  const addUserMessage = (text: string) => {
+    setMessages(prev => [...prev, { id: Date.now().toString(), sender: 'user', text }]);
+    handleNextStep(text);
   };
-  const area = calculateArea();
+
+  const handleNextStep = (answer: string) => {
+    const updatedData = { ...businessData };
+    
+    switch (step) {
+      case 0:
+        if (answer.includes("Tell me more")) {
+          addAriaMessage("HireIQ uses AI to help you build a team blueprint, auto-generate job listings, have our AI interview candidates, and show ranked results. Ready now?", ["Yes! Let's go! 🚀"]);
+        } else {
+          setStep(1);
+          addAriaMessage("First, tell me what your company does — what products or services do you offer?", [], 'text');
+        }
+        break;
+      case 1:
+        updatedData.description = answer;
+        setStep(2);
+        addAriaMessage("Great! And which city and area is your business located in?", [], 'text');
+        break;
+      case 2:
+        updatedData.city = answer;
+        setStep(3);
+        addAriaMessage("Got it! How many people are currently working with you?", ["Just Me", "2–5", "6–20", "21–50", "200+"]);
+        break;
+      case 3:
+        updatedData.employeeCount = answer;
+        setStep(4);
+        addAriaMessage("Which roles are you looking to hire for RIGHT NOW? (Type roles separated by comma)", [], 'text');
+        break;
+      case 4:
+        const roles = answer.split(',').map(r => r.trim()).filter(r => r);
+        updatedData.roles = roles.map(r => ({ title: r, count: '', salary: '', experience: '', skills: '' }));
+        updatedData.currentRoleIdx = 0;
+        setStep(5);
+        addAriaMessage(`Perfect! Let me understand each role better. Starting with ${roles[0]}. How many ${roles[0]} do you need?`, ["1", "2", "3", "4", "5", "10+"]);
+        break;
+      case 5:
+        updatedData.roles[updatedData.currentRoleIdx].count = answer;
+        setStep(6);
+        addAriaMessage(`What monthly salary range are you offering for ${updatedData.roles[updatedData.currentRoleIdx].title}?`, ["₹10K–15K", "₹15K–25K", "₹25K–40K", "₹40K–60K", "Negotiable"]);
+        break;
+      case 6:
+        updatedData.roles[updatedData.currentRoleIdx].salary = answer;
+        setStep(7);
+        addAriaMessage(`What experience level do you need for ${updatedData.roles[updatedData.currentRoleIdx].title}?`, ["Fresher", "1–3 Years", "3–5 Years", "5+ Years", "Any"]);
+        break;
+      case 7:
+        updatedData.roles[updatedData.currentRoleIdx].experience = answer;
+        setStep(8);
+        addAriaMessage(`Any must-have skills or qualifications for ${updatedData.roles[updatedData.currentRoleIdx].title}?`, [], 'text');
+        break;
+      case 8:
+        updatedData.roles[updatedData.currentRoleIdx].skills = answer;
+        if (updatedData.currentRoleIdx < updatedData.roles.length - 1) {
+          updatedData.currentRoleIdx++;
+          setStep(5);
+          addAriaMessage(`Great! Now for ${updatedData.roles[updatedData.currentRoleIdx].title}. How many do you need?`, ["1", "2", "3", "4", "5", "10+"]);
+        } else {
+          setStep(9);
+          addAriaMessage("Almost there! What are your preferred working hours?", ["9am–6pm", "10am–7pm", "Night Shift", "Flexible"]);
+        }
+        break;
+      case 9:
+        updatedData.hours = answer;
+        setStep(10);
+        addAriaMessage("What's your preferred work model for these roles?", ["On-site Only", "Remote", "Hybrid", "Varies"]);
+        break;
+      case 10:
+        updatedData.workModel = answer;
+        setStep(11);
+        addAriaMessage("How urgently do you need to hire?", ["ASAP", "Within 1 Week", "Within 1 Month", "Flexible"]);
+        break;
+      case 11:
+        updatedData.urgency = answer;
+        setStep(12);
+        addAriaMessage("Last question! 😊 What makes your business a great place to work? Why should talented people join your team?", [], 'text');
+        break;
+      case 12:
+        updatedData.values = answer;
+        setStep(13);
+        addAriaMessage(`🎉 Fantastic work! Here's your info:
+City: ${updatedData.city}
+Roles: ${updatedData.roles.map((r: any) => `${r.count}x ${r.title}`).join(', ')}
+Urgency: ${updatedData.urgency}
+
+Does everything look correct?`, ["✅ Yes! Build My Dream Team!", "✏️ Let me change something"]);
+        break;
+      case 13:
+        if (answer.includes("Yes")) {
+           completeOnboarding(updatedData);
+        } else {
+           setStep(0);
+           addAriaMessage("Let's start over! What does your business do?");
+        }
+        break;
+    }
+    
+    setBusinessData(updatedData);
+  };
+
+  const completeOnboarding = async (data: any) => {
+    addAriaMessage("🚀 Amazing! I'm now generating your complete Team Blueprint with AI-powered job descriptions and market insights!");
+    
+    // Save to Firestore and LocalStorage
+    try {
+      if (auth.currentUser) {
+        await updateDoc(doc(db, 'users', auth.currentUser.uid), { onboardingComplete: true });
+        await updateDoc(doc(db, 'businessProfiles', auth.currentUser.uid), {
+           description: data.description,
+           city: data.city,
+           employeeCount: data.employeeCount,
+           roles: data.roles,
+           hours: data.hours,
+           workModel: data.workModel,
+           urgency: data.urgency,
+           companyValues: data.values,
+           onboardingComplete: true
+        });
+      }
+      
+      const payload = {
+         description: data.description,
+         calculatedArea: 500, // Dummy
+         budgetRangeId: 3, 
+         categoryIds: [],
+         roles: data.roles
+      };
+      
+      localStorage.setItem('businessData', JSON.stringify(payload));
+      
+      // We will redirect and generate the blueprint on the dashboard side to avoid waiting here too long
+      setTimeout(() => navigate('/dashboard'), 3000);
+      
+    } catch (e) {
+      console.error(e);
+      setTimeout(() => navigate('/dashboard'), 1500);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col items-center py-6 sm:py-12 px-4 overflow-y-auto">
-      <div className="w-full max-w-3xl mb-8">
-        <div className="flex justify-between items-center mb-2 px-2">
-          {steps.map((step) => (
-            <div key={step.id} className="flex flex-col items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                currentStep >= step.id ? 'bg-blue-900 text-white' : 'bg-gray-300 text-gray-600'
-              }`}>
-                {step.id}
-              </div>
-            </div>
-          ))}
+    <div className="h-screen w-full bg-gradient-to-br from-blue-900 to-indigo-900 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-4xl h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="bg-white border-b px-6 py-4 flex items-center justify-between z-10 shadow-sm">
+          <div className="flex items-center gap-3">
+             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-2xl relative">
+                👩‍💼
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+             </div>
+             <div>
+               <h2 className="font-bold text-gray-900 text-lg leading-tight">Aria (AI Assistant)</h2>
+               <p className="text-xs text-green-600 font-medium">Online</p>
+             </div>
+          </div>
+          <div className="text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+            Step {Math.min(step + 1, 14)} of 14
+          </div>
         </div>
-        <div className="h-2 bg-gray-300 rounded-full w-full">
-           <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }} />
-        </div>
-      </div>
 
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl relative min-h-[500px] flex flex-col border">
-         <div className="p-8 flex-grow">
-            <h2 className="text-3xl font-bold mb-6 text-blue-900">{steps[currentStep - 1].title}</h2>
-
-            {currentStep === 1 && (
-              <div className="space-y-6">
-                 <div className="space-y-2">
-                     <p className="text-gray-900 font-bold">1. Select your business type</p>
-                     <p className="text-gray-500 text-sm">Choose the category that best matches your business.</p>
-                     <CategorySelector selectedIds={categories} maxSelect={1} onSelectionChange={setCategories} />
-                 </div>
-                 <div className="space-y-2 pt-6 border-t border-gray-100">
-                     <p className="text-gray-900 font-bold">2. Tell us exactly what your business does...</p>
-                     <p className="text-gray-500 text-sm">Example: "We are a premium bridal makeup studio focusing on traditional Indian weddings, usually handling 5-6 weddings a week."</p>
-                     <textarea 
-                        value={businessDescription}
-                        onChange={e => setBusinessDescription(e.target.value)}
-                        placeholder="Write a little about your daily business..."
-                        className="w-full p-4 border-2 border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] text-sm"
-                     />
-                 </div>
-              </div>
-            )}
-
-            {currentStep === 2 && (
-              <div className="space-y-8">
-                 <div className="space-y-4 bg-gray-50 p-6 rounded-xl border">
-                    <button 
-                      onClick={handleDetectLocation}
-                      disabled={isDetectingLoc}
-                      className="w-full border-2 border-blue-500 text-blue-700 bg-blue-50 rounded-xl p-4 font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors"
-                    >
-                      <MapPin /> {isDetectingLoc ? 'Detecting location...' : (locationDetected ? '📍 Location Detected ✓ (Click to change)' : '📍 Use My Current Location')}
-                    </button>
-                    
-                    <div className="flex items-center gap-4 my-4">
-                      <div className="flex-1 h-px bg-gray-300"></div>
-                      <div className="text-gray-400 font-bold">OR</div>
-                      <div className="flex-1 h-px bg-gray-300"></div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <input value={locData.area} onChange={e=>setLocData({...locData, area:e.target.value})} placeholder="Shop/Area/Locality" className="p-3 border rounded-xl" />
-                       <div className="relative z-50">
-                          <SearchableSelect options={topCities} value={locData.city} onChange={val => setLocData({...locData, city: val})} placeholder="Search City..." />
-                       </div>
-                       <select value={locData.state} onChange={e=>setLocData({...locData, state:e.target.value})} className="p-3 border rounded-xl bg-white">
-                         <option value="">Select State</option>
-                         {indianStates.map(state => <option key={state} value={state}>{state}</option>)}
-                       </select>
-                       <input value={locData.pin} onChange={e=>setLocData({...locData, pin:e.target.value})} maxLength={6} placeholder="PIN Code" className="p-3 border rounded-xl" />
-                    </div>
-                 </div>
-
-                 <div className="space-y-4 border-t pt-8">
-                    <h3 className="font-bold text-gray-900">What is the size of your business space?</h3>
-                    <p className="text-gray-500 text-sm">This helps our AI understand your capacity and recommend staff.</p>
-                    <div className="grid grid-cols-3 gap-4">
-                       <div><label className="block text-xs font-bold mb-1">Length (feet)</label><input type="number" value={size.length} onChange={e=>setSize({...size, length:e.target.value})} placeholder="20" className="w-full p-3 border rounded-xl" /></div>
-                       <div><label className="block text-xs font-bold mb-1">Width (feet)</label><input type="number" value={size.width} onChange={e=>setSize({...size, width:e.target.value})} placeholder="15" className="w-full p-3 border rounded-xl" /></div>
-                       <div><label className="block text-xs font-bold mb-1 text-gray-400">Height (Optional)</label><input type="number" value={size.height} onChange={e=>setSize({...size, height:e.target.value})} placeholder="10" className="w-full p-3 border rounded-xl text-gray-400" /></div>
-                    </div>
-                    {area > 0 && (
-                      <div className="bg-blue-50 text-blue-800 p-4 rounded-xl border border-blue-200 mt-4 space-y-2">
-                        <div className="font-bold">📐 Total Floor Area: {area} sq ft</div>
-                        {area < 200 && <div>🟡 Small space — Recommended for 2-3 staff</div>}
-                        {area >= 200 && area <= 500 && <div>🟢 Medium space — Recommended for 4-6 staff</div>}
-                        {area > 500 && <div>🟢 Large space — Recommended for 7+ staff</div>}
-                      </div>
-                    )}
-                 </div>
-              </div>
-            )}
-
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                 <div>
-                    <h3 className="font-bold text-gray-900 mb-1">Total monthly budget for staff salaries?</h3>
-                    <p className="text-gray-500 text-sm mb-4">Select the total amount for ALL staff combined.</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                       {BudgetCards.map(b => (
-                         <div 
-                           key={b.id} 
-                           onClick={() => setBudget(b.id)}
-                           className={`p-4 border-2 rounded-xl cursor-pointer transition-all flex justify-between items-center ${budget === b.id ? 'border-amber-500 bg-amber-500 text-white shadow' : 'bg-white hover:bg-blue-50 border-gray-200'}`}
-                         >
-                            <div>
-                               <div className="font-bold">{b.range}</div>
-                               <div className={`text-xs mt-1 ${budget === b.id ? 'text-amber-100' : 'text-gray-500'}`}>{b.desc}</div>
-                            </div>
-                         </div>
-                       ))}
-                    </div>
-                 </div>
-              </div>
-            )}
-
-            {currentStep === 4 && (
-              <div className="space-y-6">
-                <h3 className="font-bold text-gray-900 mb-1">When do you need your staff?</h3>
-                <div className="bg-yellow-50 p-4 border border-yellow-200 rounded-xl text-yellow-800 text-sm flex gap-3">
-                   <div className="text-xl">💡</div>
-                   <div>
-                     <strong>Example:</strong> "I need a receptionist urgently within 3-4 days because my current one is leaving. Other staff can wait a month."
-                   </div>
+        {/* Chat Area */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50">
+          <AnimatePresence>
+            {messages.map((msg, idx) => (
+              <motion.div 
+                key={msg.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {msg.sender === 'aria' && (
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm mr-3 mt-1 shrink-0">👩‍💼</div>
+                )}
+                <div className={`max-w-[75%] rounded-2xl p-4 shadow-sm ${msg.sender === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white text-gray-800 border border-gray-100 rounded-tl-sm'}`}>
+                  <p className="whitespace-pre-wrap">{msg.text}</p>
                 </div>
+              </motion.div>
+            ))}
+            
+            {isTyping && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm mr-3 shrink-0">👩‍💼</div>
+                <div className="bg-white p-4 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 flex gap-1.5 items-center">
+                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div className="bg-white p-4 border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          {messages.length > 0 && messages[messages.length - 1].sender === 'aria' && !isTyping ? (
+            <div className="space-y-4">
+              {messages[messages.length - 1].options && messages[messages.length - 1].options?.length! > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                   {['🔴 Immediately (1-3 days)', '🟡 This Week (4-7 days)', '🟠 This Month', '🟢 Within 3 Months'].map(chip => (
-                     <button key={chip} onClick={() => setUrgencyText(prev => prev ? prev + ' ' + chip : chip)} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border rounded-full text-sm font-medium">
-                        {chip}
-                     </button>
-                   ))}
+                  {messages[messages.length - 1].options?.map((opt, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => addUserMessage(opt)}
+                      className="bg-blue-50 hover:bg-blue-100 text-blue-700 whitespace-nowrap px-4 py-2.5 rounded-full text-sm font-bold border border-blue-200 transition-colors"
+                    >
+                      {opt}
+                    </button>
+                  ))}
                 </div>
-                <textarea 
-                  value={urgencyText}
-                  onChange={(e) => setUrgencyText(e.target.value)}
-                  maxLength={300}
-                  className="w-full h-32 p-4 border rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-amber-500"
-                  placeholder="Describe your urgency in your own words..."
-                />
-                <div className="text-right text-xs text-gray-500">{urgencyText.length} / 300 characters</div>
-              </div>
-            )}
-
-            {currentStep === 5 && (
-              <div className="space-y-6">
-                 <div>
-                    <h3 className="font-bold text-gray-900 mb-1">How should we keep you updated? ℹ️</h3>
-                    <p className="text-gray-500 text-sm mb-6">We'll send alerts for new applicants and interviews.</p>
-                    
-                    <div className="space-y-4">
-                       {commError && <div className="p-3 bg-red-100 text-red-700 text-sm rounded-xl font-bold border border-red-300">{commError}</div>}
-                       <div className={`p-5 border-2 rounded-xl transition-colors ${comms.whatsapp ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'}`}>
-                          <div className="flex justify-between items-center mb-4">
-                            <div>
-                               <div className="font-bold text-gray-900">WhatsApp Updates</div>
-                               <div className="text-xs text-gray-500">Get instant candidate alerts via WhatsApp</div>
-                            </div>
-                            <button onClick={() => { setComms({...comms, whatsapp: !comms.whatsapp}); setCommError(''); }} className={`w-12 h-6 rounded-full relative transition-colors ${comms.whatsapp ? 'bg-green-500' : 'bg-gray-300'}`}>
-                               <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${comms.whatsapp ? 'translate-x-6' : 'translate-x-1'}`} />
-                            </button>
-                          </div>
-                          {comms.whatsapp && (
-                            <div>
-                               <input type="tel" value={whatsappNum} onChange={e => {setWhatsappNum(e.target.value); setCommError('');}} placeholder="Enter WhatsApp Number" className={`w-full p-3 border rounded-xl ${commError.includes('WhatsApp') ? 'border-red-500' : ''}`} />
-                               <p className="text-xs text-green-700 mt-2">✅ We'll never spam. Only hiring updates.</p>
-                            </div>
-                          )}
-                       </div>
-
-                       <div className={`p-5 border-2 rounded-xl transition-colors ${comms.email ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white'}`}>
-                          <div className="flex justify-between items-center mb-4">
-                            <div>
-                               <div className="font-bold text-gray-900">Email Updates</div>
-                               <div className="text-xs text-gray-500">Receive detailed reports in your email</div>
-                            </div>
-                            <button onClick={() => { setComms({...comms, email: !comms.email}); setCommError(''); }} className={`w-12 h-6 rounded-full relative transition-colors ${comms.email ? 'bg-orange-500' : 'bg-gray-300'}`}>
-                               <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${comms.email ? 'translate-x-6' : 'translate-x-1'}`} />
-                            </button>
-                          </div>
-                          {comms.email && (
-                            <div>
-                               <input type="email" value={emailAddress} onChange={e => {setEmailAddress(e.target.value); setCommError('');}} placeholder="yourname@email.com" className={`w-full p-3 border rounded-xl ${commError.includes('email') ? 'border-red-500' : ''}`} />
-                            </div>
-                          )}
-                       </div>
-                    </div>
-                 </div>
-              </div>
-            )}
-         </div>
-
-         <div className="p-6 bg-gray-50 border-t rounded-b-2xl flex justify-between items-center mt-auto">
-          <button 
-            onClick={() => currentStep > 1 && setCurrentStep(currentStep - 1)} 
-            disabled={currentStep === 1}
-            className={`px-6 py-2.5 rounded-lg font-bold ${currentStep === 1 ? 'opacity-50 text-gray-400' : 'text-blue-900 bg-white border hover:bg-gray-100'}`}
-          >
-             Back
-          </button>
-          <button 
-            onClick={() => {
-               if (currentStep < 5) {
-                  setCurrentStep(currentStep + 1);
-               } else {
-                  if (!comms.whatsapp && !comms.email) {
-                     setCommError("Please select at least one updates option.");
-                     return;
-                  }
-                  if (comms.whatsapp && !whatsappNum.trim()) {
-                     setCommError("Please enter your WhatsApp number.");
-                     return;
-                  }
-                  if (comms.email && !emailAddress.trim()) {
-                      setCommError("Please enter your email address.");
-                      return;
-                  }
-                  
-                  // Save all data to local storage for the blueprint building
-                  localStorage.setItem('businessData', JSON.stringify({
-                      categoryIds: categories,
-                      description: businessDescription,
-                      location: locData,
-                      size,
-                      calculatedArea: area,
-                      budgetRangeId: budget,
-                      urgencyText,
-                      communications: comms,
-                  }));
-
-                  navigate('/dashboard');
-               }
-            }}
-            className={`px-8 py-2.5 text-white rounded-lg font-bold shadow-md hover:shadow-lg transition-transform hover:-translate-y-0.5 ${currentStep === 5 ? 'bg-green-600' : 'bg-blue-900'}`}
-          >
-            {currentStep === 5 ? 'Build Team Blueprint 🚀' : 'Continue'}
-          </button>
+              ) : (
+                <form onSubmit={(e) => { e.preventDefault(); if(inputText.trim()) { addUserMessage(inputText); setInputText(''); } }} className="flex gap-3">
+                  <input 
+                    type="text" 
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder="Type your response..." 
+                    autoFocus
+                    className="flex-1 border p-4 rounded-xl bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                  />
+                  <button type="submit" disabled={!inputText.trim()} className="bg-blue-600 hover:bg-blue-700 text-white px-6 font-bold rounded-xl disabled:opacity-50 transition-colors">
+                    Send
+                  </button>
+                </form>
+              )}
+            </div>
+          ) : (
+            <div className="h-14 flex items-center justify-center text-gray-400 text-sm">
+              {isTyping ? "Aria is typing..." : "Please wait..."}
+            </div>
+          )}
         </div>
       </div>
     </div>
