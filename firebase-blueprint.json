@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user in the system.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["owner", "seeker"] },
+        "createdAt": { "type": "number" },
+        "onboardingComplete": { "type": "boolean" },
+        "profileComplete": { "type": "boolean" }
+      }
+    },
+    "BusinessProfile": {
+      "title": "BusinessProfile",
+      "description": "Profile data for business owners.",
+      "type": "object",
+      "properties": {
+        "onboardingComplete": { "type": "boolean" },
+        "businessName": { "type": "string" },
+        "industry": { "type": "string" },
+        "location": { "type": "string" },
+        "email": { "type": "string" },
+        "roles": { "type": "array" }
+      }
+    },
+    "JobSeekerProfile": {
+      "title": "JobSeekerProfile",
+      "description": "Profile data for job seekers.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Users collection."
+    },
+    "/businessProfiles/{userId}": {
+      "schema": { "$ref": "#/entities/BusinessProfile" },
+      "description": "Business profiles collection."
+    },
+    "/jobSeekerProfiles/{userId}": {
+      "schema": { "$ref": "#/entities/JobSeekerProfile" },
+      "description": "Job seeker profiles collection."
+    },
+    "/test/{docId}": {
+      "schema": { "type": "object", "properties": {} },
+      "description": "Test collection."
+    }
+  }
+}

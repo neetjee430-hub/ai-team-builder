@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, Users, Video, Star, MoreHorizontal, ArrowRight, TrendingUp, Sparkles } from 'lucide-react';
+import { Briefcase, Users, Video, Star, MoreHorizontal, ArrowRight, TrendingUp, Sparkles, UserCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const StatCard = ({ title, value, icon, trend, iconColor, bgColor }: any) => {

@@ -36,7 +36,7 @@ Keep track of where you are in the flow based on the conversation history. Keep 
 If the user says "Yes, Build My Dream Team!" at the end, say "🚀 Amazing! I'm now generating your complete Team Blueprint..." and output a special JSON string at the very end of your message: {"onboardingComplete": true}.
 
 Conversation history:
-${messages.map(m => \`\${m.role}: \${m.text}\`).join('\\n')}
+${messages.map(m => `${m.role}: ${m.text}`).join('\\n')}
 Aria: `;
 
   try {

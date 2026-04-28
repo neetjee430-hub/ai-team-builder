@@ -241,7 +241,8 @@ const InterviewRoom = () => {
 
     const handleManualNext = () => {
         if (isListening && stopListeningRef.current) {
-             stopListeningRef.current(true, document.getElementById('chat-input')?.value); // forces final read
+             const el = document.getElementById('chat-input') as HTMLTextAreaElement | null;
+             stopListeningRef.current(true, el?.value); // forces final read
         }
     };
 

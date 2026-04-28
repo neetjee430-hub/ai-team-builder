@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Basic test connection point
+    match /test/connection {
+      allow read, write: if true;
+    }
+
+    // Helper functions
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /businessProfiles/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /jobSeekerProfiles/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}

@@ -64,7 +64,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
-        <ToastContainer position="bottom-right" />
+        <ToastContainer position="bottom-right" aria-label="Toast notifications" />
       </LanguageProvider>
     </AuthProvider>
   );
