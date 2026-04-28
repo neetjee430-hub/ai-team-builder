@@ -31,7 +31,8 @@ const OnboardingWizard = () => {
 
   // Step 1
   const [categories, setCategories] = useState<string[]>([]);
-  
+  const [businessDescription, setBusinessDescription] = useState('');
+
   // Step 2
   const [isDetectingLoc, setIsDetectingLoc] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
@@ -123,9 +124,22 @@ const OnboardingWizard = () => {
             <h2 className="text-3xl font-bold mb-6 text-blue-900">{steps[currentStep - 1].title}</h2>
 
             {currentStep === 1 && (
-              <div className="space-y-4">
-                 <p className="text-gray-600 font-medium">Select your business category to customize your AI blueprint.</p>
-                 <CategorySelector selectedIds={categories} maxSelect={1} onSelectionChange={setCategories} />
+              <div className="space-y-6">
+                 <div className="space-y-2">
+                     <p className="text-gray-900 font-bold">1. Select your business type</p>
+                     <p className="text-gray-500 text-sm">Choose the category that best matches your business.</p>
+                     <CategorySelector selectedIds={categories} maxSelect={1} onSelectionChange={setCategories} />
+                 </div>
+                 <div className="space-y-2 pt-6 border-t border-gray-100">
+                     <p className="text-gray-900 font-bold">2. Tell us exactly what your business does...</p>
+                     <p className="text-gray-500 text-sm">Example: "We are a premium bridal makeup studio focusing on traditional Indian weddings, usually handling 5-6 weddings a week."</p>
+                     <textarea 
+                        value={businessDescription}
+                        onChange={e => setBusinessDescription(e.target.value)}
+                        placeholder="Write a little about your daily business..."
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] text-sm"
+                     />
+                 </div>
               </div>
             )}
 
@@ -302,6 +316,19 @@ const OnboardingWizard = () => {
                       setCommError("Please enter your email address.");
                       return;
                   }
+                  
+                  // Save all data to local storage for the blueprint building
+                  localStorage.setItem('businessData', JSON.stringify({
+                      categoryIds: categories,
+                      description: businessDescription,
+                      location: locData,
+                      size,
+                      calculatedArea: area,
+                      budgetRangeId: budget,
+                      urgencyText,
+                      communications: comms,
+                  }));
+
                   navigate('/dashboard');
                }
             }}

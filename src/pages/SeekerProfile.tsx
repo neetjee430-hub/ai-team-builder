@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { Camera, Plus, Trash2, Save, ArrowLeft, CheckCircle2, FileText, Briefcase, GraduationCap, PlayCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -36,9 +37,6 @@ const SeekerProfile = () => {
   }, []);
 
   useEffect(() => {
-    const profileSaved = localStorage.getItem('seekerProfileSaved') === 'true';
-    if(profileSaved) return; // already 100%
-    
     let p = 20; // base progress
     if (photo) p += 20;
     if (personalDetails.name && personalDetails.phone && personalDetails.city) p += 20;
@@ -51,8 +49,11 @@ const SeekerProfile = () => {
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const url = URL.createObjectURL(e.target.files[0]);
-      setPhoto(url);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhoto(reader.result as string);
+      };
+      reader.readAsDataURL(e.target.files[0]);
     }
   };
 

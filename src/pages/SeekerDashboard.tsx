@@ -40,7 +40,7 @@ const SeekerDashboard = () => {
         <p className="text-blue-100 mb-4">Here are jobs near you in {seekerCity}</p>
       </header>
 
-      <div className="px-4 space-y-8 max-w-4xl mx-auto">
+      <div className="px-4 space-y-8 max-w-4xl mx-auto pb-24">
         <section>
           <div className="bg-white p-6 rounded-2xl shadow-sm border space-y-4">
             <h3 className="font-bold text-lg">Your Profile Completeness</h3>
@@ -60,9 +60,6 @@ const SeekerDashboard = () => {
 
         <section>
            <h3 className="font-bold text-xl mb-4 text-gray-900">Jobs Matching Your Skills</h3>
-           <p className="text-sm text-gray-500 mb-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-             Note: As per your previous selection (e.g., Teaching), we've filtered relevant roles for you from employers on our platform.
-           </p>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              {mockJobs.map(job => (
                <div key={job.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col hover:shadow-md transition-shadow">
@@ -81,15 +78,23 @@ const SeekerDashboard = () => {
                   </div>
                   <Link 
                     to={`/apply/${job.id}`} 
-                    className="w-full mt-auto bg-amber-500 text-white font-bold py-3.5 rounded-xl hover:bg-amber-600 transition-colors shadow-md flex items-center justify-center gap-2 text-center"
+                    className="w-full mt-auto bg-amber-500 text-black font-bold py-3.5 rounded-xl hover:bg-amber-400 transition-colors shadow-md flex items-center justify-center gap-2 text-center"
                   >
-                     <Video size={18} /> Apply & Start AI Interview →
+                     <Video size={18} /> Apply & Interview Now →
                   </Link>
                </div>
              ))}
            </div>
         </section>
       </div>
+
+      <nav className="fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around p-3 z-50 md:hidden">
+        <button className="flex flex-col items-center text-blue-600 py-1"><span className="text-xl">🏠</span><span className="text-[10px] font-bold">Home</span></button>
+        <button className="flex flex-col items-center text-gray-500 py-1 hover:text-blue-600"><span className="text-xl">💼</span><span className="text-[10px]">Jobs</span></button>
+        <button className="flex flex-col items-center text-gray-500 py-1 hover:text-blue-600"><span className="text-xl">📋</span><span className="text-[10px]">Interviews</span></button>
+        <button onClick={() => navigate('/seeker/profile')} className="flex flex-col items-center text-gray-500 py-1 hover:text-blue-600"><span className="text-xl">👤</span><span className="text-[10px]">Profile</span></button>
+        <button className="flex flex-col items-center text-gray-500 py-1 hover:text-blue-600"><span className="text-xl">🔔</span><span className="text-[10px]">Alerts</span></button>
+      </nav>
     </div>
   );
 };

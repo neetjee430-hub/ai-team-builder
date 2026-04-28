@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
@@ -132,9 +133,17 @@ const AuthPage = () => {
                     </div>
                     <div>
                        <label className="block text-sm font-medium mb-2 font-bold">Years of experience</label>
-                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                          {['Fresher', '< 1 year', '1-3 years', '3-5 years', '5+ years'].map((exp, i) => (
                            <label key={i} className="flex gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"><input type="radio" name="experience" required /> <span className="text-sm font-medium">{exp}</span></label>
+                         ))}
+                       </div>
+                    </div>
+                    <div>
+                       <label className="block text-sm font-medium mb-2 font-bold">Expected Salary (Monthly)</label>
+                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                         {['₹5K - ₹10K', '₹10K - ₹20K', '₹20K - ₹30K', '₹30K+'].map((sal, i) => (
+                           <label key={i} className="flex gap-2 p-3 border rounded-lg cursor-pointer hover:bg-blue-50 text-center justify-center"><input type="radio" name="salary" className="hidden" required /> <span className="text-sm font-bold text-gray-700">{sal}</span></label>
                          ))}
                        </div>
                     </div>

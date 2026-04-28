@@ -1,21 +1,55 @@
+import React from 'react';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Network, Mic, Camera, Fingerprint, Star, AlertCircle } from 'lucide-react';
+
+const jobsById: Record<string, any> = {
+  "1": { 
+    roleTitle: "Senior Hair Stylist", 
+    department: "Salon", 
+    skillsRequired: ["Hair coloring", "Styling", "Keratin treatments"], 
+    expRequired: "2+ years", 
+    salaryRange: "15000-20000" 
+  },
+  "2": { 
+    roleTitle: "Receptionist", 
+    department: "Front Desk", 
+    skillsRequired: ["Communication", "Scheduling", "Customer Service"], 
+    expRequired: "Fresher ok", 
+    salaryRange: "12000-16000" 
+  }
+};
 
 const CandidateApplyPage = () => {
   const navigate = useNavigate();
+  const { jobId } = useParams();
+  
+  const job = jobsById[jobId || "1"] || jobsById["1"];
+  
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [experience, setExperience] = useState('');
+  const [docSummary, setDocSummary] = useState('');
+  
   const [skills, setSkills] = useState({ s1: false, s2: false, cert: false });
   const [showWarning, setShowWarning] = useState(false);
 
   const handleStart = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Demand at least 2 required selections
+    if (!name || !phone) {
+      alert("Please enter Name and Phone.");
+      return;
+    }
+
     const score = (skills.s1 ? 1 : 0) + (skills.s2 ? 1 : 0) + (skills.cert ? 1 : 0);
     if (score < 2) {
       setShowWarning(true);
     } else {
-      window.scrollTo(0,0);
-      navigate('/interview/123');
+      const sessionId = Date.now().toString();
+      const candidateInfo = { name, phone, yearsExperience: experience, docSummary };
+      localStorage.setItem(`interview_session_${sessionId}`, JSON.stringify({ jobId: jobId || "1", candidateInfo }));
+      window.scrollTo(0, 0);
+      navigate(`/interview/${sessionId}`);
     }
   };
 
@@ -24,27 +58,33 @@ const CandidateApplyPage = () => {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
         <div className="bg-blue-900 p-6 text-white text-center">
           <h1 className="text-2xl font-bold mb-2">HireGuru AI</h1>
-          <p className="text-blue-200">Applying for: Senior Hair Stylist at Glamour Salon, Indore</p>
+          <p className="text-blue-200">Applying for: {job.roleTitle} at Glamour Salon, Indore</p>
         </div>
         <div className="p-8 space-y-6 flex-grow">
           <form className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1 text-gray-700">Full Name</label>
-              <input type="text" className="w-full border rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Enter your name" required />
+              <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Enter your name" required />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 text-gray-700">Mobile Number</label>
-              <input type="tel" className="w-full border rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Enter mobile number" required />
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full border rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Enter mobile number" required />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700">Age</label>
-                <input type="number" className="w-full border rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Age" required />
+                <input type="number" className="w-full border rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Age" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700">Experience (Years)</label>
-                <input type="number" className="w-full border rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Years" required />
+                <input type="number" value={experience} onChange={e => setExperience(e.target.value)} className="w-full border rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Years" required />
               </div>
+            </div>
+            
+            <div>
+               <label className="block text-sm font-medium mb-1 text-gray-700">Certifications / Documents (Optional)</label>
+               <textarea value={docSummary} onChange={e => setDocSummary(e.target.value)} rows={2} className="w-full border rounded-lg p-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Type certificate names (e.g., L'Oreal Color Expert)" />
+               <p className="text-xs text-gray-500 mt-1">Our AI will use this info during the interview.</p>
             </div>
             
             <div className="pt-4 pb-2">

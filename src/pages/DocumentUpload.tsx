@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import { UploadCloud, FileText, CheckCircle, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';

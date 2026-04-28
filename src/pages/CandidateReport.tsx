@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Phone, UserCircle, Star, BadgeCheck, FileText, Activity, TrendingDown, Target, BrainCircuit, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Phone, UserCircle, Star, BadgeCheck, FileText, Activity, TrendingDown, Target, BrainCircuit, ShieldAlert, AlertCircle, Mic, Play, MessageCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
 
@@ -77,6 +77,90 @@ const CandidateReport = () => {
                    <span className="text-xs text-gray-500 font-bold uppercase">/ 100</span>
                 </div>
              </div>
+         </div>
+      </div>
+
+      {/* New: Top Action Buttons matching requirement */}
+      <div className="flex flex-col md:flex-row gap-3 mt-6 mb-8 w-full">
+        <button onClick={handleHire} className="flex-1 flex justify-center items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-sm transition">
+          <BadgeCheck size={20} /> Hire Candidate
+        </button>
+        <button onClick={() => setActionStatus('rejected')} className="flex-1 flex justify-center items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-6 py-3 rounded-xl font-bold shadow-sm transition">
+          <ShieldAlert size={20} /> Reject
+        </button>
+        <button onClick={() => window.open(`https://wa.me/919876543210`, '_blank')} className="flex-1 flex justify-center items-center gap-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] px-6 py-3 rounded-xl font-bold shadow-sm transition whitespace-nowrap">
+          <MessageCircle size={20} /> WhatsApp Candidate
+        </button>
+      </div>
+
+      {/* New: Visual Red/Green Flags */}
+      <div className="bg-white p-6 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-6">
+        <div className="flex-1 border border-green-200 bg-green-50 rounded-xl p-5">
+           <h4 className="text-sm font-bold text-green-700 uppercase tracking-widest mb-3 flex items-center gap-2"><CheckCircle2 size={16} /> Green Flags</h4>
+           <ul className="space-y-2 text-sm text-green-900 font-medium">
+              <li className="flex gap-2 items-start"><div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0"></div> 5+ years of verified salon experience</li>
+              <li className="flex gap-2 items-start"><div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0"></div> Friendly tone; high empathy scores</li>
+              <li className="flex gap-2 items-start"><div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0"></div> Willing to work weekends and holidays</li>
+           </ul>
+        </div>
+        <div className="flex-1 border border-red-200 bg-red-50 rounded-xl p-5">
+           <h4 className="text-sm font-bold text-red-700 uppercase tracking-widest mb-3 flex items-center gap-2"><AlertTriangle size={16} /> Red Flags</h4>
+           <ul className="space-y-2 text-sm text-red-900 font-medium">
+              <li className="flex gap-2 items-start"><div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0"></div> Salary expectation slightly high (₹25k vs ₹20k budget)</li>
+              <li className="flex gap-2 items-start"><div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0"></div> Paused uncomfortably during chemical mixing question</li>
+           </ul>
+        </div>
+      </div>
+
+      {/* FEATURE: INTERVIEW PLAYBACK TIMELINE */}
+      <div className="bg-white p-6 rounded-2xl border shadow-sm">
+         <h3 className="font-bold text-lg mb-6 flex items-center gap-2"><Play className="text-amber-500 fill-current" /> AI Interview Playback</h3>
+         <div className="bg-gray-900 rounded-xl p-6 text-white mb-6 relative overflow-hidden ring-1 ring-gray-800 shadow-xl">
+            <div className="flex justify-between items-end mb-4">
+               <div>
+                  <div className="text-sm text-gray-400 font-bold tracking-widest uppercase mb-1">Recording</div>
+                  <div className="text-2xl font-mono text-blue-300">12:45</div>
+               </div>
+               <button className="bg-amber-500 hover:bg-amber-400 text-black w-14 h-14 rounded-full flex items-center justify-center transition shadow-[0_0_20px_rgba(245,158,11,0.5)] cursor-pointer">
+                  <Play size={24} className="fill-current ml-1" />
+               </button>
+            </div>
+            
+            <div className="mt-8">
+               <div className="text-xs text-gray-400 mb-2 font-bold uppercase tracking-wider flex items-center justify-between">
+                 <span>Confidence Timeline</span>
+                 <span className="text-yellow-400">⚠️ Drop at 06:30</span>
+               </div>
+               <div className="h-24 w-full bg-gray-800 rounded-xl relative flex items-end overflow-hidden p-1 gap-1">
+                  {[90, 92, 85, 88, 70, 60, 55, 65, 80, 85, 90, 95, 96, 95, 92, 90].map((h, i) => (
+                     <div key={i} className="flex-1 rounded-t-sm transition-all" style={{ height: `${h}%`, backgroundColor: h < 65 ? '#EAB308' : '#3B82F6' }}></div>
+                  ))}
+               </div>
+               <div className="flex justify-between text-xs text-gray-500 mt-2 font-mono">
+                  <span>00:00</span>
+                  <span className="text-yellow-500 font-bold">06:30 (Timer Test)</span>
+                  <span>12:45</span>
+               </div>
+            </div>
+         </div>
+         <div className="space-y-4">
+            <h4 className="font-bold text-gray-900">Playback Highlights</h4>
+            <div className="flex gap-4 p-4 border rounded-xl hover:bg-gray-50 cursor-pointer transition">
+               <div className="w-16 font-mono text-sm font-bold text-gray-500 shrink-0 mt-0.5">00:00</div>
+               <div className="flex-1"><div className="font-medium text-gray-900">Intro & Background</div></div>
+               <div className="flex items-center gap-2 shrink-0"><div className="w-2 h-2 rounded-full bg-green-500"></div><span className="text-sm font-bold">90% Conf.</span></div>
+            </div>
+            <div className="flex gap-4 p-4 border border-yellow-200 bg-yellow-50 rounded-xl cursor-pointer transition relative overflow-hidden">
+               <div className="absolute left-0 top-0 bottom-0 w-1 bg-yellow-500"></div>
+               <div className="w-16 font-mono text-sm font-bold text-yellow-700 shrink-0 mt-0.5">06:30</div>
+               <div className="flex-1"><div className="font-medium text-yellow-900">Knowledge of chemicals (Timer Test)</div></div>
+               <div className="flex items-center gap-2 shrink-0"><div className="w-2 h-2 rounded-full bg-yellow-500"></div><span className="text-sm font-bold text-yellow-700">60% Conf.</span></div>
+            </div>
+            <div className="flex gap-4 p-4 border rounded-xl hover:bg-gray-50 cursor-pointer transition">
+               <div className="w-16 font-mono text-sm font-bold text-gray-500 shrink-0 mt-0.5">08:45</div>
+               <div className="flex-1"><div className="font-medium text-gray-900">Roleplay: Angry customer</div></div>
+               <div className="flex items-center gap-2 shrink-0"><div className="w-2 h-2 rounded-full bg-green-500"></div><span className="text-sm font-bold">85% Conf.</span></div>
+            </div>
          </div>
       </div>
 
@@ -191,10 +275,10 @@ const CandidateReport = () => {
           </div>
       </div>
 
-      <div className="sticky bottom-0 flex justify-end gap-3 pt-6 pb-2 bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent z-10 -mx-6 px-6">
-          <button onClick={() => setActionStatus('rejected')} className="px-6 py-3 border border-red-200 bg-white text-red-600 rounded-xl hover:bg-red-50 font-bold transition-all shadow-sm">Reject Profile</button>
-          <a href="tel:+919876543210" className="px-6 py-3 border border-gray-300 bg-white rounded-xl hover:bg-gray-50 font-bold flex items-center gap-2 text-gray-800 transition-all shadow-sm"><Phone size={18}/> Call Candidate</a>
-          <button onClick={handleHire} className="px-8 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold transition-all shadow-md shadow-green-600/20">Mark as Hired ✅</button>
+      <div className="sticky bottom-0 flex flex-nowrap md:justify-end gap-3 pt-6 pb-4 bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent z-10 -mx-6 px-6">
+          <button onClick={() => setActionStatus('rejected')} className="flex-1 md:flex-none px-6 py-3 border border-red-200 bg-white text-red-600 rounded-xl hover:bg-red-50 font-bold transition-all shadow-sm flex items-center justify-center gap-2"><ShieldAlert size={18}/> Reject</button>
+          <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer" className="flex-1 md:flex-none px-6 py-3 bg-[#25D366]/10 text-[#25D366] rounded-xl hover:bg-[#25D366]/20 font-bold flex items-center justify-center gap-2 transition-all shadow-sm"><MessageCircle size={18}/> WhatsApp</a>
+          <button onClick={handleHire} className="flex-1 md:flex-none px-8 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-green-600/20"><BadgeCheck size={18}/> Mark as Hired</button>
       </div>
 
     </div>

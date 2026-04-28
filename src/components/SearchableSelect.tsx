@@ -51,21 +51,29 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, val
                placeholder="Search or enter city name..." 
                value={search}
                onChange={(e) => setSearch(e.target.value)}
+               onKeyDown={(e) => {
+                 if (e.key === 'Enter' && search) {
+                    e.preventDefault();
+                    if (exactMatch) onChange(exactMatch);
+                    else onChange(search);
+                    setIsOpen(false);
+                    setSearch('');
+                 }
+               }}
                autoFocus
              />
           </div>
           <div className="overflow-y-auto flex-1 h-48">
             {search && !exactMatch && (
                <div 
-                 className="p-3 text-sm cursor-pointer hover:bg-green-50 text-green-700 font-medium flex items-center gap-2 border-b"
-                 onMouseDown={(e) => {
-                   e.preventDefault();
+                 className="p-3 text-sm cursor-pointer bg-green-50 hover:bg-green-100 text-green-700 font-bold flex items-center gap-2 border-b"
+                 onClick={() => {
                    onChange(search);
                    setIsOpen(false);
                    setSearch('');
                  }}
                >
-                 <Plus size={16} /> Add "{search}"
+                 <Plus size={16} /> Click to Add "{search}"
                </div>
             )}
             {filteredOptions.length > 0 ? (
@@ -73,8 +81,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, val
                 <div 
                   key={opt} 
                   className={`p-3 text-sm cursor-pointer hover:bg-blue-50 ${value === opt ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}`}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
+                  onClick={() => {
                     onChange(opt);
                     setIsOpen(false);
                     setSearch('');
