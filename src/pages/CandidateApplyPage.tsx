@@ -57,7 +57,7 @@ const CandidateApplyPage = () => {
     <div className="min-h-screen bg-gray-50 flex justify-center items-center p-4 py-12">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
         <div className="bg-blue-900 p-6 text-white text-center">
-          <h1 className="text-2xl font-bold mb-2">HireGuru AI</h1>
+          <h1 className="text-2xl font-bold mb-2">HireIQ AI</h1>
           <p className="text-blue-200">Applying for: {job.roleTitle} at Glamour Salon, Indore</p>
         </div>
         <div className="p-8 space-y-6 flex-grow">

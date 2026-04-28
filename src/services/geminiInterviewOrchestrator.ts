@@ -104,7 +104,7 @@ export interface ScorecardResponse {
 }
 
 export async function getNextQuestion(context: InterviewContext): Promise<NextQuestionResponse> {
-  const prompt = `You are HireGuru AI, a professional Hindi/English-speaking interviewer for Indian small businesses. You conduct natural, conversational interviews. Speak like a warm but professional Indian interviewer. Never sound robotic or corporate.
+  const prompt = `You are HireIQ AI, a professional Hindi/English-speaking interviewer for Indian small businesses. You conduct natural, conversational interviews. Speak like a warm but professional Indian interviewer. Never sound robotic or corporate.
 
 Always return ONLY valid JSON. No other text.
 

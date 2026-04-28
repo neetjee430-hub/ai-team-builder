@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+const fs = require('fs');
+
+const content = `import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Briefcase, CheckCircle2, Video, GraduationCap, Target, Sparkles, MapPin } from 'lucide-react';
 
@@ -113,7 +115,7 @@ const SeekerDashboard = () => {
                   </div>
                   
                   <Link 
-                    to={`/apply/${job.id}`} 
+                    to={\`/apply/\${job.id}\`} 
                     className="w-full mt-6 bg-gray-900 text-white font-bold py-3.5 rounded-xl hover:bg-[#4F46E5] transition-colors flex items-center justify-center gap-2 text-center"
                   >
                      Apply Now →
@@ -147,3 +149,7 @@ const VideoIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="no
 const UserIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
 
 export default SeekerDashboard;
+`;
+
+fs.writeFileSync('src/pages/SeekerDashboard.tsx', content);
+console.log("Updated SeekerDashboard.tsx");

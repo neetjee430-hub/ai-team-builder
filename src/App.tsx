@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
@@ -22,12 +22,22 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import SeekerDashboard from './pages/SeekerDashboard';
 import SeekerProfile from './pages/SeekerProfile';
 import InterviewsTracker from './pages/InterviewsTracker';
+import { FloatingChat } from './components/FloatingChat';
+
+const GlobalOverlays = () => {
+    const location = useLocation();
+    const hideChatPaths = ['/interview/', '/onboarding/business', '/onboarding/jobseeker'];
+    const shouldShowChat = !hideChatPaths.some(p => location.pathname.includes(p));
+    
+    return shouldShowChat ? <FloatingChat /> : null;
+};
 
 export default function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
         <Router>
+          <GlobalOverlays />
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />

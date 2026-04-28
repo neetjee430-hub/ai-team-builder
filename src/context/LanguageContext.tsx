@@ -15,7 +15,7 @@ const translations: Record<string, Record<string, string>> = {
     // HERO
     hero_headline_1: "Stop Hiring the",
     hero_headline_2: "Wrong People.",
-    hero_sub: "HireGuru AI conducts voice interviews in Hindi or English, reads body language live, checks certificates, and tells you exactly who to hire — in under 10 minutes.",
+    hero_sub: "HireIQ AI conducts voice interviews in Hindi or English, reads body language live, checks certificates, and tells you exactly who to hire — in under 10 minutes.",
     hero_cta_primary: "Get Started Free →",
     hero_cta_secondary: "Watch Demo ▶",
     hero_trust_1: "✅ No credit card required",
@@ -23,7 +23,7 @@ const translations: Record<string, Record<string, string>> = {
     hero_trust_3: "✅ Hindi + English support",
     
     // HOW IT WORKS
-    how_header: "How HireGuru AI Works",
+    how_header: "How HireIQ AI Works",
     step1_title: "Tell us your business",
     step1_desc: "Select business type, location, team size and budget. Takes 2 minutes.",
     step2_title: "AI builds your Team Blueprint",
@@ -66,7 +66,7 @@ const translations: Record<string, Record<string, string>> = {
     interview_permission_title: "Let's Set Up Your Interview",
     interview_allow_mic: "Allow Microphone Access",
     interview_allow_cam: "Allow Camera Access",
-    interview_consent: "I allow HireGuru AI to use my microphone and camera for this interview session only. Nothing is recorded or stored.",
+    interview_consent: "I allow HireIQ AI to use my microphone and camera for this interview session only. Nothing is recorded or stored.",
     interview_start: "I'm Ready — Start Interview →",
     interview_ai_speaking: "AI is speaking...",
     interview_listening: "Listening to you...",
@@ -108,7 +108,7 @@ const translations: Record<string, Record<string, string>> = {
     // HERO
     hero_headline_1: "गलत लोगों को",
     hero_headline_2: "हायर करना बंद करें।",
-    hero_sub: "HireGuru AI हिंदी या English में voice interview लेता है, body language पढ़ता है, certificates check करता है, और बताता है किसे रखें — सिर्फ 10 मिनट में।",
+    hero_sub: "HireIQ AI हिंदी या English में voice interview लेता है, body language पढ़ता है, certificates check करता है, और बताता है किसे रखें — सिर्फ 10 मिनट में।",
     hero_cta_primary: "मुफ़्त शुरू करें →",
     hero_cta_secondary: "डेमो देखें ▶",
     hero_trust_1: "✅ क्रेडिट कार्ड की ज़रूरत नहीं",
@@ -116,7 +116,7 @@ const translations: Record<string, Record<string, string>> = {
     hero_trust_3: "✅ हिंदी + English सपोर्ट",
     
     // HOW IT WORKS
-    how_header: "HireGuru AI कैसे काम करता है",
+    how_header: "HireIQ AI कैसे काम करता है",
     step1_title: "अपना बिज़नेस बताएं",
     step1_desc: "बिज़नेस टाइप, लोकेशन, टीम साइज़ और बजट चुनें। सिर्फ 2 मिनट लगते हैं।",
     step2_title: "AI आपकी टीम का ब्लूप्रिंट बनाता है",
@@ -159,7 +159,7 @@ const translations: Record<string, Record<string, string>> = {
     interview_permission_title: "Interview Setup करें",
     interview_allow_mic: "Microphone Access दें",
     interview_allow_cam: "Camera Access दें",
-    interview_consent: "मैं HireGuru AI को सिर्फ इस interview के लिए microphone और camera इस्तेमाल करने की अनुमति देता/देती हूं। कुछ भी record या store नहीं होगा।",
+    interview_consent: "मैं HireIQ AI को सिर्फ इस interview के लिए microphone और camera इस्तेमाल करने की अनुमति देता/देती हूं। कुछ भी record या store नहीं होगा।",
     interview_start: "मैं तैयार हूं — Interview शुरू करें →",
     interview_ai_speaking: "AI बोल रहा है...",
     interview_listening: "आपकी बात सुन रहा है...",

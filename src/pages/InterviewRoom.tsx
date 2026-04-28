@@ -241,7 +241,7 @@ const InterviewRoom = () => {
 
     const handleManualNext = () => {
         if (isListening && stopListeningRef.current) {
-             stopListeningRef.current(true); // forces final read
+             stopListeningRef.current(true, document.getElementById('chat-input')?.value); // forces final read
         }
     };
 
@@ -391,7 +391,7 @@ const InterviewRoom = () => {
 
                         <label className="flex items-start gap-3 p-4 bg-blue-900/20 border border-blue-900 rounded-xl cursor-pointer">
                             <input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)} className="mt-1 w-5 h-5 accent-blue-500" />
-                            <span className="text-sm text-blue-200">I allow HireGuru AI to use my microphone {useCamera && 'and camera'} for this interview session. No video recordings will be stored.</span>
+                            <span className="text-sm text-blue-200">I allow HireIQ AI to use my microphone {useCamera && 'and camera'} for this interview session. No video recordings will be stored.</span>
                         </label>
 
                         <button 
@@ -472,7 +472,7 @@ const InterviewRoom = () => {
                 {/* LEFT: AI AVATAR */}
                 <div className="w-full md:w-1/4 p-6 border-r border-gray-800 flex flex-col items-center justify-center bg-gray-950 relative">
                     <div className="text-center mb-8">
-                       <h2 className="text-lg font-bold mb-1">HireGuru AI</h2>
+                       <h2 className="text-lg font-bold mb-1">HireIQ AI</h2>
                        <div className="text-xs text-gray-500 uppercase tracking-widest">{phase === 'roleplay' ? '🎭 ROLEPLAY MODE' : 'INTERVIEWER'}</div>
                     </div>
 
@@ -525,16 +525,53 @@ const InterviewRoom = () => {
                             </motion.div>
                         </AnimatePresence>
 
-                        {/* LIVE TRANSCRIPT */}
-                        <div className="w-full bg-gray-900/50 border border-gray-800 rounded-2xl p-6 min-h-[160px] relative">
-                            <div className="absolute -top-3 left-6 bg-gray-800 text-xs font-bold px-3 py-1 rounded-full text-gray-400 uppercase tracking-widest border border-gray-700">
-                                Your Answer (Live)
+                        
+                        {/* Live Transcript / Chat Mode Input */}
+                        <div className="w-full bg-gray-900/50 border border-gray-800 rounded-2xl p-6 min-h-[160px] relative mt-4 shadow-inner">
+                            <div className="absolute -top-3 left-6 bg-gray-800 text-xs font-bold px-3 py-1 rounded-full text-gray-400 uppercase tracking-widest border border-gray-700 shadow-md">
+                                Your Answer
                             </div>
-                            <p className={`text-lg leading-relaxed ${transcript ? 'text-gray-200' : 'text-gray-600 italic'}`}>
-                                {transcript || (isListening ? "Listening... start speaking." : "Wait for AI to finish...")}
-                                {isListening && <span className="inline-block w-2 h-4 ml-1 bg-amber-500 animate-pulse"></span>}
-                            </p>
+                            
+                            {!isListening ? (
+                                <p className="text-gray-500 italic mt-2 text-center">Wait for MAX to finish speaking...</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="flex border border-gray-700 bg-gray-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#4F46E5] transition-all shadow-sm">
+                                        <div className="p-3 bg-gray-700/50 text-gray-400 border-r border-gray-700 flex items-center justify-center">
+                                            <Mic size={20} className={isListening ? "text-blue-400 animate-pulse" : ""} />
+                                        </div>
+                                        <textarea 
+                                           id="chat-input"
+                                           className="w-full bg-transparent text-white p-4 outline-none resize-none min-h-[100px]"
+                                           placeholder="Type your answer here or just speak naturally (Voice is active)..."
+                                           defaultValue={transcript || ''}
+                                           onKeyDown={(e) => {
+                                               if (e.key === 'Enter' && !e.shiftKey) {
+                                                   e.preventDefault();
+                                                   if (stopListeningRef.current) {
+                                                       const val = e.currentTarget.value;
+                                                       stopListeningRef.current(true, val);
+                                                   }
+                                               }
+                                           }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between items-center px-1">
+                                        <span className="text-xs text-gray-500 font-medium">Press Enter to submit or use voice</span>
+                                        <button 
+                                           onClick={() => {
+                                               const el = document.getElementById('chat-input') as HTMLTextAreaElement;
+                                               if(stopListeningRef.current) stopListeningRef.current(true, el?.value);
+                                           }}
+                                           className="px-4 py-1.5 bg-[#4F46E5] hover:bg-[#6366f1] text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                                        >
+                                           Submit Answer
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+
 
                         {/* ACTIONS */}
                         <div className="mt-8 flex gap-4 opacity-50 hover:opacity-100 transition-opacity">

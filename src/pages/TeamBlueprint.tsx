@@ -49,7 +49,7 @@ const TeamBlueprint = () => {
   const handleShare = () => {
     if (!blueprintData) return;
     const rolesText = blueprintData.roles.map((r: any) => `${r.count} ${r.title}`).join(', ');
-    const text = `Check out my Team Blueprint from HireGuru AI!\nWe need: ${rolesText}.`;
+    const text = `Check out my Team Blueprint from HireIQ AI!\nWe need: ${rolesText}.`;
     navigator.clipboard.writeText(text);
     alert("Blueprint copied to clipboard!");
   };

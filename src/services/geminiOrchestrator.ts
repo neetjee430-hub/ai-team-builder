@@ -22,7 +22,7 @@ export async function generateTeamBlueprint(businessData: any) {
   const salaryContext = JSON.stringify(BASE_SALARIES_2025);
 
   const prompt = `
-You are the HireGuru AI Team Architect for small to medium Indian businesses.
+You are the HireIQ AI Team Architect for small to medium Indian businesses.
 The user is opening or managing a business and needs a Team Blueprint.
 
 Business Details:
@@ -81,7 +81,7 @@ Return ONLY this JSON:
 
 export async function getNextQuestion(ctx: any) {
   const prompt = `
-You are HireGuru AI — a warm, professional Indian interviewer.
+You are HireIQ AI — a warm, professional Indian interviewer.
 Conduct a natural voice interview in ${ctx.language}.
 
 Job: ${ctx.job.roleTitle} at ${ctx.job.businessType}
