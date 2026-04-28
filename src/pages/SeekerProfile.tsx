@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Camera, Save, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { toast } from 'react-toastify';
 
 const SeekerProfile = () => {
@@ -46,7 +46,7 @@ const SeekerProfile = () => {
              }));
            }
          } catch(e) {
-            console.error(e);
+            handleFirestoreError(e, OperationType.GET, `jobSeekerProfiles/${auth.currentUser.uid}`);
          }
       }
       setLoadingInitial(false);
@@ -70,6 +70,7 @@ const SeekerProfile = () => {
         setStep(step + 1);
       }
     } catch (error: any) {
+      handleFirestoreError(error, OperationType.UPDATE, `jobSeekerProfiles/${auth.currentUser.uid}`);
       toast.error(error.message);
     } finally {
       setIsSaving(false);

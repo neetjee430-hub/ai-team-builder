@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth, db } from '../lib/firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Building2, User, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -35,19 +35,29 @@ const AuthPage = () => {
     
     try {
       if (isLogin) {
-        const userCred = await signInWithEmailAndPassword(auth, email, password);
-        const userDoc = await getDoc(doc(db, 'users', userCred.user.uid));
+        let userCred;
+        try {
+           userCred = await signInWithEmailAndPassword(auth, email, password);
+        } catch (e: any) {
+           toast.error(e.message);
+           setLoading(false);
+           return;
+        }
         
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData.role === 'business') {
-            navigate('/dashboard');
-          } else {
-            navigate('/seeker/dashboard');
-          }
-        } else {
-          // Fallback
-          navigate('/');
+        try {
+           const userDoc = await getDoc(doc(db, 'users', userCred.user.uid));
+           if (userDoc.exists()) {
+             const userData = userDoc.data();
+             if (userData.role === 'business') {
+               navigate('/dashboard');
+             } else {
+               navigate('/seeker/dashboard');
+             }
+           } else {
+             navigate('/');
+           }
+        } catch(e: any) {
+           handleFirestoreError(e, OperationType.GET, `users/${userCred.user.uid}`);
         }
       } else {
         if (!termsAccepted) {
@@ -56,7 +66,14 @@ const AuthPage = () => {
           return;
         }
 
-        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        let userCred;
+        try {
+          userCred = await createUserWithEmailAndPassword(auth, email, password);
+        } catch (e: any) {
+          toast.error(e.message);
+          setLoading(false);
+          return;
+        }
         const uid = userCred.user.uid;
 
         const userData = {
@@ -70,22 +87,26 @@ const AuthPage = () => {
           onboardingComplete: false,
         };
 
-        await setDoc(doc(db, 'users', uid), userData);
+        try {
+           await setDoc(doc(db, 'users', uid), userData);
 
-        if (role === 'owner') {
-          await setDoc(doc(db, 'businessProfiles', uid), {
-            businessName,
-            city,
-            category: selectedCategories[0] || '',
-            onboardingComplete: false
-          });
-          navigate('/onboarding');
-        } else {
-          await setDoc(doc(db, 'jobSeekerProfiles', uid), {
-            city,
-            categories: selectedCategories
-          });
-          navigate('/seeker/profile'); // Navigate to full profile setup
+           if (role === 'owner') {
+             await setDoc(doc(db, 'businessProfiles', uid), {
+               businessName,
+               city,
+               category: selectedCategories[0] || '',
+               onboardingComplete: false
+             });
+             navigate('/onboarding');
+           } else {
+             await setDoc(doc(db, 'jobSeekerProfiles', uid), {
+               city,
+               categories: selectedCategories
+             });
+             navigate('/seeker/profile');
+           }
+        } catch (e: any) {
+           handleFirestoreError(e, OperationType.WRITE, `users/${uid} / profiles`);
         }
       }
     } catch (error: any) {
@@ -101,31 +122,41 @@ const AuthPage = () => {
       const userCred = await signInWithPopup(auth, provider);
       const uid = userCred.user.uid;
       
-      const userDoc = await getDoc(doc(db, 'users', uid));
+      let userDoc;
+      try {
+         userDoc = await getDoc(doc(db, 'users', uid));
+      } catch (e: any) {
+         handleFirestoreError(e, OperationType.GET, `users/${uid}`);
+         return;
+      }
       
-      if (!userDoc.exists()) {
-        const userData = {
-          uid,
-          email: userCred.user.email,
-          name: userCred.user.displayName,
-          role: role === 'owner' ? 'business' : 'jobseeker',
-          createdAt: new Date().toISOString(),
-          profileComplete: false,
-          onboardingComplete: false,
-        };
-        await setDoc(doc(db, 'users', uid), userData);
-        
-        if (role === 'owner') {
-           await setDoc(doc(db, 'businessProfiles', uid), { onboardingComplete: false });
-           navigate('/onboarding');
-        } else {
-           await setDoc(doc(db, 'jobSeekerProfiles', uid), {});
-           navigate('/seeker/profile');
-        }
-      } else {
-        const r = userDoc.data().role;
-        if (r === 'business') navigate('/dashboard');
-        else navigate('/seeker/dashboard');
+      try {
+         if (!userDoc.exists()) {
+           const userData = {
+             uid,
+             email: userCred.user.email,
+             name: userCred.user.displayName,
+             role: role === 'owner' ? 'business' : 'jobseeker',
+             createdAt: new Date().toISOString(),
+             profileComplete: false,
+             onboardingComplete: false,
+           };
+           await setDoc(doc(db, 'users', uid), userData);
+           
+           if (role === 'owner') {
+              await setDoc(doc(db, 'businessProfiles', uid), { onboardingComplete: false });
+              navigate('/onboarding');
+           } else {
+              await setDoc(doc(db, 'jobSeekerProfiles', uid), {});
+              navigate('/seeker/profile');
+           }
+         } else {
+           const r = userDoc.data().role;
+           if (r === 'business') navigate('/dashboard');
+           else navigate('/seeker/dashboard');
+         }
+      } catch (e: any) {
+         handleFirestoreError(e, OperationType.WRITE, `users/${uid} / profiles`);
       }
     } catch (error: any) {
       toast.error("Google Auth Failed");
